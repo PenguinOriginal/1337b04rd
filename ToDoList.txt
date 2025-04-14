@@ -1,0 +1,30 @@
+Setup folder structure (hex architecture), .env (from Docker), etc
+Setup Docker (docker-compose.yml, Dockerfile)
+Setup HTTP router (net/http)
+Add middleware to router
+Implement user registration + avatar fetching
+Implement session creation (cookie-based, UUID?)
+Store session info to DB
+Middleware for session valisation
+Implement logout endpoint (?) (delete session + cookie)
+Fetch avatar from Rick & Morty API on user creation
+Store only URL in DB (do not download avatar)
+
+
+Setup connection to PostgreSQL via sqlc
+Define models for post, comment, image (struct + json)
+Implement create/list/delete post handlers
+Save uploaded image id + original filename in DB
+Implement create/list comment handlers
+Link comments to posts, allow anonymous or session authorship
+
+
+Endpoints:
+GET / - serve front page
+POST /posts - create new post
+GET /posts/{id} - view a single post
+
+POST /posts/{id}/comments - create a comment on a post
+POST /upload - upload image for a post 
+
+GET /avatars/{username} - fetch avatar from external API 
