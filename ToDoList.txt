@@ -20,11 +20,14 @@ Link comments to posts, allow anonymous or session authorship
 
 
 Endpoints:
-GET / - serve front page
-POST /posts - create new post
-GET /posts/{id} - view a single post
+GET / - serve front page (catalog.html), view active threads (posts)
+GET /archive - view archived posts (archive.html)
 
-POST /posts/{id}/comments - create a comment on a post
-POST /upload - upload image for a post 
+GET /posts/{id} - view a single post and its comments (post.html)
+GET /create - open a form to create a new thread/post (create-post.html)
+POST /posts - submit new post (via create-post.html)
 
-GET /avatars/{username} - fetch avatar from external API 
+POST /posts/{id}/comments - submit a comment on a post  (post.html)
+
+GET /avatars/{name} - show user avatar (-)
+GET /error - show error screen (error.html)
