@@ -1,3 +1,4 @@
+// If we keep DeletePost function, then we need one for comments as well
 package postgresql
 
 import (
@@ -8,6 +9,8 @@ import (
 	"database/sql"
 	"log/slog"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // Injecting PostgreSQL
@@ -24,8 +27,8 @@ func NewPostgresCommentRepo(db *sql.DB, logger *slog.Logger) *PostgresCommentRep
 func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.Comment) error {
 	query := `
 		INSERT INTO comments (
-			comment_id, post_id, session_id, comment_content, parent_comment_id, created_at, is_archived
-		) VALUES ($1, $2, $3, $4, $5, $6, $7);
+			comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 	`
 
 	_, err := r.db.ExecContext(
@@ -36,6 +39,7 @@ func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.
 		comment.SessionID,
 		comment.Content,
 		comment.ParentCommentID,
+		pq.Array(comment.ImageURLs),
 		comment.CreatedAt,
 		comment.IsArchived,
 	)
@@ -50,7 +54,7 @@ func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.
 
 func (r *PostgresCommentRepo) GetCommentByPostID(ctx context.Context, postID utils.UUID) ([]*model.Comment, error) {
 	query := `
-		SELECT comment_id, post_id, session_id, comment_content, parent_comment_id, created_at, is_archived
+		SELECT comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
 		FROM comments
 		WHERE post_id = $1 AND is_archived = false
 		ORDER BY created_at ASC;
@@ -73,6 +77,7 @@ func (r *PostgresCommentRepo) GetCommentByPostID(ctx context.Context, postID uti
 			&comment.SessionID,
 			&comment.Content,
 			&comment.ParentCommentID,
+			pq.Array(comment.ImageURLs),
 			&comment.CreatedAt,
 			&comment.IsArchived,
 		)
@@ -139,5 +144,3 @@ func (r *PostgresCommentRepo) ArchiveCommentByPostID(ctx context.Context, postID
 
 	return nil
 }
-
-// If we keep DeletePost function, then we need one for comments as well

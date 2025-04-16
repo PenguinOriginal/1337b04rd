@@ -1,3 +1,4 @@
+-- Return to this code later
 CREATE TABLE sessions (
   session_id UUID PRIMARY KEY, -- cookie/session ID
   avatar_url TEXT NOT NULL,
@@ -24,6 +25,7 @@ CREATE TABLE comments (
   session_id TEXT NOT NULL REFERENCES sessions(session_id),
   comment_content TEXT NOT NULL,
   parent_comment_id UUID REFERENCES comments(comment_id), -- for replies to comments
+  image_urls TEXT [] DEFAULT '{}', -- turns out images can be added to comments as well
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   is_archived BOOLEAN DEFAULT FALSE
 );
