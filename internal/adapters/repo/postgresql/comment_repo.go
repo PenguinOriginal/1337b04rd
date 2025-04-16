@@ -95,7 +95,8 @@ func (r *PostgresCommentRepo) GetCommentByPostID(ctx context.Context, postID uti
 	return comments, nil
 }
 
-// Why do we need this function?
+// Fetch the most recent comment's created_at
+// Might need this in future, but actually don't need it
 func (r *PostgresCommentRepo) GetLatestCommentTime(ctx context.Context, postID utils.UUID) (*time.Time, error) {
 	query := `
 		SELECT MAX(created_at)
@@ -117,8 +118,8 @@ func (r *PostgresCommentRepo) GetLatestCommentTime(ctx context.Context, postID u
 	return &latestTime.Time, nil
 }
 
-// ArchiveByPostID sets all comments on a post to archived
-func (r *PostgresCommentRepo) ArchiveByPostID(ctx context.Context, postID utils.UUID) error {
+// Make all comments of a specific post as is_archived = true
+func (r *PostgresCommentRepo) ArchiveCommentByPostID(ctx context.Context, postID utils.UUID) error {
 	query := `
 		UPDATE comments
 		SET is_archived = true
@@ -138,3 +139,5 @@ func (r *PostgresCommentRepo) ArchiveByPostID(ctx context.Context, postID utils.
 
 	return nil
 }
+
+// If we keep DeletePost function, then we need one for comments as well
