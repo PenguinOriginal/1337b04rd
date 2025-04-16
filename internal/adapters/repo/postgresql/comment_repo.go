@@ -1,2 +1,1 @@
-// DB adapter
 package postgresql
