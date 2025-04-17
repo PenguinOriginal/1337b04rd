@@ -1,3 +1,5 @@
+<!-- Added: Image uploading for comments, multiple image uploads (multiple attribute), displays all images attached to each comment -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,10 +36,6 @@
             width: 300px;
         }
 
-        .text {
-
-        }
-
         .comment .header {
             display: flex;
             align-items: center;
@@ -46,6 +44,13 @@
         .comment .content {
             margin-top: 10px;
             display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .comment .content img {
+            max-width: 100px;
+            max-height: 100px;
         }
     </style>
 </head>
@@ -57,80 +62,58 @@
     <!-- Main Post -->
     <div class="post">
         <div class="header">
-<!--            <img src="{{.UserAvatar}}" alt="no pic" width="30px" height="30px">-->
             <img src="https://rickandmortyapi.com/api/character/avatar/1.jpeg" alt="no pic" width="50px" height="50px">
             <b>{{.UserName}}</b>
             {{.DataTime}}
             {{.PostID}}
         </div>
         <div class="content">
-            <a href="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png">
-                <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png" alt="no pic">
+            <a href="{{.PostImageURL}}">
+                <img src="{{.PostImageURL}}" alt="no pic">
             </a>
             <div class="text">
                 <h3>{{.Title}}</h3>
                 {{.Content}}
             </div>
         </div>
-
     </div>
+
     <!-- Comments Section -->
     <div class="comments">
         <h2>Comments</h2>
-    <ul class="comment-list">
-        {{range .Comments}}
-        <li class="comment">
-            <div class="header">
-                <!--            <img src="{{.UserAvatar}}" alt="no pic" width="30px" height="30px">-->
-                <img src="{{.AvaterLink}}" alt="no pic" width="50px" height="50px">
-                <b>{{.UserName}}</b>
-                {{.DataTime}}
-                {{.CommentID}}
-            </div>
-            <div class="content">
-                <a href="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png">
-                    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png" alt="no pic"  width="100px" height="100px">
-                </a>
-                <div class="text">
-                    {{.Content}}
+        <ul class="comment-list">
+            {{range .Comments}}
+            <li class="comment">
+                <div class="header">
+                    <img src="{{.AvaterLink}}" alt="no pic" width="50px" height="50px">
+                    <b>{{.UserName}}</b>
+                    {{.DataTime}}
+                    {{.CommentID}}
                 </div>
-            </div>
-        </li>
-        {{end}}
-        <li class="comment">
-            <div class="header">
-                <!--            <img src="{{.UserAvatar}}" alt="no pic" width="30px" height="30px">-->
-                <img src="https://rickandmortyapi.com/api/character/avatar/1.jpeg" alt="no pic" width="50px" height="50px">
-                <b>{{.UserName}}</b>
-                {{.DataTime}}
-                {{.PostID}}
-            </div>
-            <div class="content">
-                <a href="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png">
-                    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_light_color_272x92dp.png" alt="no pic"  width="100px" height="100px">
-                </a>
-                <div class="text">
-                    {{.Content}}
+                <div class="content">
+                    {{range .ImageLinks}}
+                    <a href="{{.}}">
+                        <img src="{{.}}" alt="comment image">
+                    </a>
+                    {{end}}
+                    <div class="text">
+                        {{.Content}}
+                    </div>
                 </div>
-            </div>
-        </li>
-    </ul>
-        <!-- Comment Example -->
-
+            </li>
+            {{end}}
+        </ul>
     </div>
 
     <!-- Add a Comment Section -->
     <div class="add-comment">
         <h3>Add a Comment</h3>
-        <form action="/submit-comment" method="POST">
-            <textarea name="comment" placeholder="Write your comment here..."></textarea>
-            <tr>
-                <td>File</td>
-                <td>
-                    <input name="file" type="file">
-                </td>
-            </tr>
+        <form action="/submit-comment" method="POST" enctype="multipart/form-data">
+            <textarea name="comment" placeholder="Write your comment here..." rows="4" cols="50"></textarea>
             <br>
+            <label for="file">Attach image(s):</label>
+            <input name="file" type="file" multiple>
+            <br><br>
             <input type="submit" value="Submit">
         </form>
     </div>
