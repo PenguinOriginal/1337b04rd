@@ -1,10 +1,14 @@
 package model
 
-import "time"
+import (
+	"1337b04rd/pkg/utils"
+	"strings"
+	"time"
+)
 
 type Post struct {
-	PostID     UUID
-	SessionID  UUID
+	PostID     utils.UUID
+	SessionID  utils.UUID
 	UserName   string
 	Title      string
 	Content    string
@@ -19,4 +23,16 @@ func (p *Post) IsExpired(lastCommentAt *time.Time) bool {
 		return time.Since(p.CreatedAt) > 10*time.Minute
 	}
 	return time.Since(*lastCommentAt) > 15*time.Minute
+}
+
+func (p *Post) ValidatePost() error {
+
+	if strings.TrimSpace(p.Title) == "" {
+		return ErrMissingTitle
+	}
+	if p.SessionID == "" {
+		return ErrMissingSessionID
+	}
+	// if there's no username, db sets it as "Anonymous"
+	return nil
 }

@@ -15,10 +15,9 @@ var (
 
 // Post-specific errors
 var (
-	ErrPostTitleRequired = errors.New("post title is required")
-	ErrPostContentEmpty  = errors.New("post content cannot be empty")
-	// ErrPostTooLong       = errors.New("post exceeds maximum allowed length")
-	ErrPostNotFound = errors.New("post not found")
+	ErrPostNotFound     = errors.New("post not found")
+	ErrMissingTitle     = errors.New("post title is required")
+	ErrMissingSessionID = errors.New("session ID is required")
 )
 
 // Comment-specific errors
@@ -37,6 +36,6 @@ var (
 
 // Misc
 var (
-	ErrDatabase       = errors.New("database error")
+	// ErrDatabase       = errors.New("database error")
 	ErrUUIDGeneration = errors.New("failed to generate UUID")
 )

@@ -7,8 +7,6 @@ import (
 )
 
 type PostService interface {
-	// CreatePost inserts a new post into the database.
-	// Used by frontend for creating new threads.
 	CreatePost(ctx context.Context, post *model.Post) error
 
 	// GetAllPosts retrieves all non-archived posts from the database.

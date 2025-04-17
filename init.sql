@@ -12,8 +12,7 @@ CREATE TABLE posts (
   user_name TEXT NOT NULL DEFAULT 'Anonymous',
   post_title TEXT NOT NULL,
   post_content TEXT NULLABLE, -- Allow users to post only title or title and image
-  -- CHECK: Go code must reject empty posts (no title, content, image)
-  image_urls TEXT[] DEFAULT '{}', -- CHECK: Go code needs to check the max number of images
+  image_urls TEXT[] DEFAULT '{}',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   is_archived BOOLEAN DEFAULT FALSE
 );
