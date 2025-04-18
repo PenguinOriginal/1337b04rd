@@ -62,6 +62,7 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post) erro
 }
 
 // Work on this later:
+// imageUploader is a function that returns err and urls, must be from triple-s
 
 // // Optional: Save image files if any were attached
 // if len(post.ImageURLs) > 0 {
@@ -76,3 +77,8 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post) erro
 // 	}
 // 	post.ImageURLs = uploadedURLs
 // }
+
+
+// Save image to triple-s
+// get their url
+// update the post creation with this urls?

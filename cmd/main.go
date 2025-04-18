@@ -12,4 +12,13 @@ func main() {
 
 	// postRepo := NewPostgresPostRepo(db, loggerObj)
 
+	/* Make sure service is also using triple-s uploader
+		import imageuploader "1337b04rd/internal/service/image_uploader"
+
+		uploader := imageuploader.NewTripleSUploader(baseURL, "data/")
+
+		postService := service.NewPostService(repo, uploader, logger)
+
+	*/
+
 }

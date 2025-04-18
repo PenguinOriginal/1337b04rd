@@ -36,6 +36,6 @@ var (
 
 // Misc
 var (
-	// ErrDatabase       = errors.New("database error")
+	ErrDatabase       = errors.New("database error")
 	ErrUUIDGeneration = errors.New("failed to generate UUID")
 )
