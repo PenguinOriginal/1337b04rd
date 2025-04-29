@@ -34,6 +34,9 @@ var (
 	ErrInvalidSessionID = errors.New("invalid session ID")
 )
 
+// Triple-S related
+var ErrBucketAlreadyExists = errors.New("bucket already exists")
+
 // Misc
 var (
 	ErrDatabase       = errors.New("database error")

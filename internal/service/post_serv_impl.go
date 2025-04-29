@@ -4,16 +4,16 @@ package service
 import (
 	"1337b04rd/internal/domain/model"
 	"1337b04rd/internal/domain/port"
-	"1337b04rd/logger"
+	"1337b04rd/pkg/logger"
 	"1337b04rd/pkg/utils"
 	"context"
 	"log/slog"
 	"time"
 )
 
-// session creation, post expiry logic, validation
+// This part is responsible for session creation, post expiry logic, validation
 
-// What it should do?
+// What should it do?
 // Validating user input before it touches the database.
 // Checking that required fields are: Present, Not empty, In the right format
 // Assigning default values (e.g., UUID, timestamps).
@@ -42,6 +42,7 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post) erro
 	if err := post.ValidatePost(); err != nil {
 		s.logger.Warn("invalid post input", slog.Any("error", err))
 		return err
+		// Standardise error handling
 	}
 
 	// Save to repo
@@ -77,7 +78,6 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post) erro
 // 	}
 // 	post.ImageURLs = uploadedURLs
 // }
-
 
 // Save image to triple-s
 // get their url

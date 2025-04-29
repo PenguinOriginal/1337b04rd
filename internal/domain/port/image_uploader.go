@@ -2,10 +2,10 @@
 package port
 
 import (
-	"context"
 	"io"
 )
 
 type ImageUploader interface {
-	Upload(ctx context.Context, file io.Reader, filename string) (string, error)
+	CreateBucket(bucketName string) error
+	UploadImage(postID, filename string, r io.Reader) (string, error)
 }

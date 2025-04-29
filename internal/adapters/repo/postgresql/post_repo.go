@@ -1,9 +1,10 @@
 // DB adapter
+// LATER: check if the mistakes are not dublicated across layers
 package postgresql
 
 import (
 	"1337b04rd/internal/domain/model"
-	"1337b04rd/logger"
+	"1337b04rd/pkg/logger"
 	"1337b04rd/pkg/utils"
 	"context"
 	"database/sql"
