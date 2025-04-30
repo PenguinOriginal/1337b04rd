@@ -8,6 +8,7 @@ import (
 	"1337b04rd/pkg/utils"
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -53,7 +54,7 @@ func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.
 	return nil
 }
 
-func (r *PostgresCommentRepo) GetCommentByPostID(ctx context.Context, postID utils.UUID) ([]*model.Comment, error) {
+func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID utils.UUID) ([]*model.Comment, error) {
 	query := `
 		SELECT comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
 		FROM comments
@@ -99,6 +100,46 @@ func (r *PostgresCommentRepo) GetCommentByPostID(ctx context.Context, postID uti
 	}
 
 	return comments, nil
+}
+
+func (r *PostgresCommentRepo) GetCommentByID(ctx context.Context, commentID utils.UUID) (*model.Comment, error) {
+	query := `
+		SELECT comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
+		FROM comments
+		WHERE comment_id = $1;
+	`
+
+	var c model.Comment
+	var parentCommentID sql.NullString
+	var imageURLs []string
+
+	err := r.db.QueryRowContext(ctx, query, commentID).Scan(
+		&c.CommentID,
+		&c.PostID,
+		&c.SessionID,
+		&c.Content,
+		&parentCommentID,
+		pq.Array(&imageURLs),
+		&c.CreatedAt,
+		&c.IsArchived,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, model.ErrCommentNotFound
+		}
+		r.logger.Error("failed to fetch comment", slog.Any("error", err))
+		return nil, logger.ErrorWrapper("repository", "GetCommentByID", "scanning result", err)
+	}
+
+	if parentCommentID.Valid {
+		id := utils.UUID(parentCommentID.String)
+		c.ParentCommentID = id
+	} else {
+		c.ParentCommentID = ""
+	}
+	c.ImageURLs = imageURLs
+
+	return &c, nil
 }
 
 // Fetch the most recent comment's created_at

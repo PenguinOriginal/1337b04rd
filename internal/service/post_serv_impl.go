@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-// This part is responsible for session creation, post expiry logic, validation
-
 type PostServiceImpl struct {
 	repo        port.PostRepo
 	commentRepo port.CommentRepo

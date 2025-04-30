@@ -1,9 +1,12 @@
 package model
 
-import "time"
+import (
+	"1337b04rd/pkg/utils"
+	"time"
+)
 
 type Session struct {
-	SessionID UUID
+	SessionID utils.UUID
 	AvatarURL string
 	CreatedAt time.Time
 	ExpiresAt time.Time
