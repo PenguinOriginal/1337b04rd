@@ -54,7 +54,7 @@ func (r *PostgresPostRepo) GetPostByID(ctx context.Context, id utils.UUID) (*mod
 	query := `
 	SELECT post_id, session_id, user_name, post_title, post_content, image_urls, created_at, is_archived
 	FROM posts 
-	WHERE post_id == $1
+	WHERE post_id = $1
 	`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&post.PostID,
@@ -71,7 +71,7 @@ func (r *PostgresPostRepo) GetPostByID(ctx context.Context, id utils.UUID) (*mod
 
 		if errors.Is(err, sql.ErrNoRows) {
 			// Post not found case
-			r.logger.Warn("post not found", slog.Any("post_id", id))
+			r.logger.Warn("post not found", slog.String("post_id", string(id)))
 			return nil, model.ErrPostNotFound
 		}
 
@@ -124,22 +124,24 @@ func (r *PostgresPostRepo) GetAllPosts(ctx context.Context) ([]*model.Post, erro
 	return posts, nil
 }
 
-func (r *PostgresPostRepo) ArchivePosts(ctx context.Context, postID utils.UUID) error {
+func (r *PostgresPostRepo) ArchivePostTx(ctx context.Context, tx *sql.Tx, postID utils.UUID) error {
 	query := `
 	UPDATE posts 
 	SET is_archived = true 
 	WHERE post_id = $1
 	`
-
-	result, err := r.db.ExecContext(ctx, query, postID)
+	// Execution of the query
+	result, err := tx.ExecContext(ctx, query, postID)
 	if err != nil {
+		// do I need to log this one here?
 		r.logger.Error("failed to archive post", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "ArchivePosts", "update is_archived", err)
 	}
 
-	// To checked whether we changed rows
+	// To check whether we changed rows
 	affected, err := result.RowsAffected()
 	if err != nil {
+		// Same questions
 		r.logger.Error("failed to get rows affected for archiving", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "ArchivePosts", "rows affected", err)
 	}
@@ -152,20 +154,3 @@ func (r *PostgresPostRepo) ArchivePosts(ctx context.Context, postID utils.UUID) 
 
 	return nil
 }
-
-// Maybe we don't need this function since there is no delete button in html
-
-// // DeleteExpiredPosts removes posts older than 30 days and already archived
-// func (r *PostgresPostRepo) DeleteExpiredPosts(ctx context.Context) error {
-// 	query := `
-// 	DELETE FROM posts WHERE is_archived = true AND created_at < $1
-// 	`
-// 	threshold := time.Now().AddDate(0, 0, -30) // 30 days ago
-
-// 	_, err := r.db.ExecContext(ctx, query, threshold)
-// 	if err != nil {
-// 		r.logger.Error("failed to delete expired posts", slog.Any("error", err))
-// 		return logger.ErrorWrapper("repository", "DeleteExpiredPosts", "delete old archived posts", err)
-// 	}
-// 	return nil
-// }

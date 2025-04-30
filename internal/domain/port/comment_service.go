@@ -18,5 +18,5 @@ type CommentService interface {
 
 	// ArchiveCommentsByPostID marks all comments of a post as archived.
 	// Used when a post is archived/deleted and comments shouldn't appear anymore.
-	ArchiveCommentsByPostID(ctx context.Context, postID utils.UUID) error
+	ArchiveCommentsByPostIDTx(ctx context.Context, postID utils.UUID) error
 }

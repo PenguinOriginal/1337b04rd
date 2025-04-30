@@ -125,14 +125,14 @@ func (r *PostgresCommentRepo) GetLatestCommentTime(ctx context.Context, postID u
 }
 
 // Make all comments of a specific post as is_archived = true
-func (r *PostgresCommentRepo) ArchiveCommentByPostID(ctx context.Context, postID utils.UUID) error {
+func (r *PostgresCommentRepo) ArchiveCommentByPostIDTx(ctx context.Context, tx *sql.Tx, postID utils.UUID) error {
 	query := `
 		UPDATE comments
 		SET is_archived = true
 		WHERE post_id = $1;
 	`
 
-	result, err := r.db.ExecContext(ctx, query, postID)
+	result, err := tx.ExecContext(ctx, query, postID)
 	if err != nil {
 		r.logger.Error("failed to archive comments", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "ArchiveByPostID", "update comments", model.ErrDatabase)
