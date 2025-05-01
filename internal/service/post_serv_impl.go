@@ -8,6 +8,7 @@ import (
 	"1337b04rd/pkg/utils"
 	"context"
 	"database/sql"
+	"errors"
 	"io"
 	"log/slog"
 	"time"
@@ -105,7 +106,40 @@ func (s *PostServiceImpl) GetPostByID(ctx context.Context, id utils.UUID) (*mode
 
 // ArchivePost marks a post (and its comments) as archived.
 // Used for removing content from the board (e.g., moderation, TTL).
-func (s *PostServiceImpl) ArchivePost(ctx context.Context, id utils.UUID) error {
+func (s *PostServiceImpl) ArchivePost(ctx context.Context, postID utils.UUID) error {
+
+	// Get the post by ID to retrieve its latest comment
+	post, err := s.repo.GetPostByID(ctx, postID)
+	if err != nil {
+		// Handle not found or database error
+		return logger.ErrorWrapper("service", "ArchivePost", "getting post", err)
+	}
+
+	// Get the latest comment time
+	latestCommentTime, err := s.commentRepo.GetLatestCommentTime(ctx, postID)
+	if err != nil && !errors.Is(err, model.ErrCommentNotFound) {
+		return logger.ErrorWrapper("service", "ArchivePost", "getting latest comment", err)
+	}
+
+	now := time.Now()
+	shouldArchive := false
+
+	if latestCommentTime == nil {
+		// No comments — archive after 10 minutes
+		if post.CreatedAt.Add(10 * time.Minute).Before(now) {
+			shouldArchive = true
+		}
+	} else {
+		// Has comments — archive after 15 minutes since latest
+		if latestCommentTime.Add(15 * time.Minute).Before(now) {
+			shouldArchive = true
+		}
+	}
+
+	if !shouldArchive {
+		s.logger.Info("post is not eligible for archival yet", slog.String("post_id", string(postID)))
+		return nil
+	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -113,16 +147,16 @@ func (s *PostServiceImpl) ArchivePost(ctx context.Context, id utils.UUID) error 
 		return logger.ErrorWrapper("service", "ArchivePost", "starting tx", err)
 	}
 	// Archive the post
-	if err := s.repo.ArchivePostTx(ctx, tx, id); err != nil {
+	if err := s.repo.ArchivePostTx(ctx, tx, postID); err != nil {
 		tx.Rollback()
 		s.logger.Error("failed to archive post", slog.Any("error", err))
 		return logger.ErrorWrapper("service", "ArchivePost", "archiving post", err)
 	}
 
 	// Archive related comments
-	if err := s.commentRepo.ArchiveCommentByPostIDTx(ctx, tx, id); err != nil {
+	if err := s.commentRepo.ArchiveCommentByPostIDTx(ctx, tx, postID); err != nil {
 		tx.Rollback()
-		s.logger.Error("failed to archive comments", slog.String("post_id", string(id)), slog.Any("error", err))
+		s.logger.Error("failed to archive comments", slog.String("post_id", string(postID)), slog.Any("error", err))
 		return logger.ErrorWrapper("service", "ArchivePost", "archiving comments", err)
 	}
 
@@ -132,6 +166,6 @@ func (s *PostServiceImpl) ArchivePost(ctx context.Context, id utils.UUID) error 
 		return logger.ErrorWrapper("service", "ArchivePost", "committing tx", err)
 	}
 
-	s.logger.Info("post and comments are archived successfully", slog.String("post_id", string(id)))
+	s.logger.Info("post and comments are archived successfully", slog.String("post_id", string(postID)))
 	return nil
 }

@@ -54,13 +54,18 @@ func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.
 	return nil
 }
 
-func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID utils.UUID) ([]*model.Comment, error) {
+func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID utils.UUID, includeArchived bool) ([]*model.Comment, error) {
 	query := `
 		SELECT comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
 		FROM comments
-		WHERE post_id = $1 AND is_archived = false
-		ORDER BY created_at ASC;
+		WHERE post_id = $1
 	`
+
+	// Return only active comments if it is the main page
+	if !includeArchived {
+		query += " AND is_archived = false"
+	}
+	query += " ORDER BY created_at DESC"
 
 	rows, err := r.db.QueryContext(ctx, query, postID)
 	if err != nil {
@@ -143,7 +148,7 @@ func (r *PostgresCommentRepo) GetCommentByID(ctx context.Context, commentID util
 }
 
 // Fetch the most recent comment's created_at
-// Might need this in future, but actually don't need it
+// Need it for archiving logic
 func (r *PostgresCommentRepo) GetLatestCommentTime(ctx context.Context, postID utils.UUID) (*time.Time, error) {
 	query := `
 		SELECT MAX(created_at)
