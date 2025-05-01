@@ -22,7 +22,7 @@ CREATE TABLE comments (
   comment_id UUID PRIMARY,
   post_id UUID NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
   session_id TEXT NOT NULL REFERENCES sessions(session_id),
-  comment_content TEXT NOT NULL,
+  comment_content TEXT,
   parent_comment_id UUID REFERENCES comments(comment_id), -- for replies to comments
   image_urls TEXT [] DEFAULT '{}', -- turns out images can be added to comments as well
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

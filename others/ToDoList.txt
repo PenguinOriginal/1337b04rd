@@ -8,17 +8,14 @@ Middleware for session validation
 Implement logout endpoint (?) (delete session + cookie)
 Fetch avatar from Rick & Morty API on user creation
 Store only URL in DB (do not download avatar)
-Implement triple-s (either import it as module or copy the whole code)
+
 Write testing (20% coverage)
 Setup connection to PostgreSQL via sql/pq
-Define models for post, comment, image (struct + json) - not sure if we need json here
-Implement create/list/delete post handlers - not sure if we need delete post handler
-Save uploaded image id + original filename in DB
+
+Implement create/list/delete post handlers - may not need delete post handler
 Implement create/list comment handlers
 Link comments to posts, allow anonymous or session authorship
 
-Considerations:
-- 
 
 Endpoints:
 GET / - serve front page (catalog.html), view active threads (posts)

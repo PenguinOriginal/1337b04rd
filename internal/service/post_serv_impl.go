@@ -37,8 +37,7 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imag
 	// Assign PostID and CreatedAt
 	UUIDnum, err := utils.GenerateUUID()
 	if err != nil {
-		s.logger.Error("failed to assign UUID to PostID",
-			slog.Any("error", err))
+		s.logger.Error("failed to assign UUID to PostID", slog.Any("error", err))
 		return logger.ErrorWrapper("service", "CreatePost", "generating UUID", model.ErrUUIDGeneration)
 	}
 	post.PostID = UUIDnum
@@ -53,20 +52,13 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imag
 
 	// Check if there are any images attached
 	if len(imageData) > 0 {
-		if err := s.uploader.CreateBucket(string(post.PostID)); err != nil {
-			s.logger.Error("bucket creation failed",
-				slog.Any("error", err))
-			return logger.ErrorWrapper("service", "CreatePost", "bucket creation failed", err)
-		}
 
 		// Upload images to buckets
 		var urls []string
 		for filename, content := range imageData {
-			url, err := s.uploader.UploadImage(string(post.PostID), filename, content)
+			url, err := s.uploader.UploadPostImage(string(post.PostID), filename, content)
 			if err != nil {
-				s.logger.Error("image upload failed",
-					slog.String("filename", filename),
-					slog.Any("error", err))
+				s.logger.Error("image upload failed", slog.String("filename", filename), slog.Any("error", err))
 				return logger.ErrorWrapper("service", "CreatePost", "image uploading", err)
 			}
 
@@ -79,8 +71,7 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imag
 
 	// Save to repo
 	if err := s.repo.CreatePost(ctx, post); err != nil {
-		s.logger.Error("failed to create post",
-			slog.Any("err", err))
+		s.logger.Error("failed to create post", slog.Any("err", err))
 		return logger.ErrorWrapper("service", "CreatePost", "saving post to repo", err)
 	}
 
@@ -93,8 +84,7 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imag
 func (s *PostServiceImpl) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	posts, err := s.repo.GetAllPosts(ctx)
 	if err != nil {
-		s.logger.Error("failed to fetch posts",
-			slog.Any("error", err))
+		s.logger.Error("failed to fetch posts", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("service", "GetAllPosts", "fetching posts", err)
 	}
 	s.logger.Info("fetched posts successfully", slog.Int("count", len(posts)))

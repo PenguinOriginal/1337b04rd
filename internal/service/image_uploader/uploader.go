@@ -1,13 +1,5 @@
 package imageuploader
 
-// Implementation of image uploader interface (from the port)
-
-// This file:
-// Validates allowed extensions
-// Calls into storage.go
-// Wraps errors
-// Returns image URLS
-
 import (
 	"1337b04rd/pkg/logger"
 	"fmt"
@@ -25,6 +17,15 @@ var allowedExtensions = map[string]bool{
 	".webp": true,
 	".bmp":  true,
 	".svg":  true,
+}
+
+type LocalUploader struct {
+	RootDir string
+	Logger  *slog.Logger
+}
+
+func NewLocalUploader(RootDir string, logger *slog.Logger) *LocalUploader {
+	return &LocalUploader{RootDir: RootDir, Logger: logger}
 }
 
 // Shared function between UploadPostImage and UploadCommentImage
@@ -71,7 +72,7 @@ func (u *LocalUploader) UploadCommentImage(postID, commentID, filename string, r
 		u.Logger.Warn("invalid image extension", slog.String("filename", filename))
 		return "", logger.ErrorWrapper("image_uploader", "UploadCommentImage", "extension check", err)
 	}
-
+	// Construct full path: /<RootDir>/<postID>/comments/<commentID>/<filename>
 	commentImagePath := filepath.Join(u.RootDir, postID, "comments", commentID)
 	fullPath := filepath.Join(commentImagePath, filename)
 
