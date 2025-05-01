@@ -8,31 +8,26 @@ import (
 	"path/filepath"
 )
 
-func SaveImageFile(rootDir, postID, filename string, r io.Reader, logger *slog.Logger) (string, error) {
+// This function is shared by UploadPostImage and UploadCommentImage
+func SaveImageFile(fullPath string, r io.Reader, logger *slog.Logger) (string, error) {
 
-	// Check if bucket exists
-	bucketPath := filepath.Join(rootDir, postID)
-	if _, err := os.Stat(bucketPath); os.IsNotExist(err) {
-		logger.Error("bucket not found",
-			slog.String("bucketPath", bucketPath))
-		return "", fmt.Errorf("bucket not found: %w", err)
+	// Check if parent directory exists
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+		logger.Error("failed to create directory", slog.String("path", filepath.Dir(fullPath)), slog.Any("error", err))
+		return "", fmt.Errorf("could not create parent directory: %w", err)
 	}
 
-	// Create full path for the image
-	imagePath := filepath.Join(bucketPath, filename)
-
 	// Check for filename collision
-	if _, err := os.Stat(imagePath); err == nil {
-		logger.Warn("file already exists",
-			slog.String("imagePath", imagePath))
+	if _, err := os.Stat(fullPath); err == nil {
+		logger.Warn("file already exists", slog.String("imagePath", fullPath))
 		return "", fmt.Errorf("file already exists")
 	}
 
 	// Create file
-	dst, err := os.Create(imagePath)
+	dst, err := os.Create(fullPath)
 	if err != nil {
 		logger.Error("failed to create file",
-			slog.String("imagePath", imagePath),
+			slog.String("imagePath", fullPath),
 			slog.Any("error", err))
 		return "", fmt.Errorf("could not create file: %w", err)
 	}
@@ -41,12 +36,12 @@ func SaveImageFile(rootDir, postID, filename string, r io.Reader, logger *slog.L
 	// Copy content
 	if _, err := io.Copy(dst, r); err != nil {
 		logger.Error("failed to copy image data",
-			slog.String("imagePath", imagePath),
+			slog.String("imagePath", fullPath),
 			slog.Any("error", err))
 		return "", fmt.Errorf("copy failed: %w", err)
 	}
 
-	// Public URL format (can be replaced with S3-style later)
-	imageURL := fmt.Sprintf("/%s/%s/%s", rootDir, postID, filename)
+	// Public URL format
+	imageURL := fmt.Sprintf("/%s", fullPath)
 	return imageURL, nil
 }
