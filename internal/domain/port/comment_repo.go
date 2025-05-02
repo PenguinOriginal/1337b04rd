@@ -15,4 +15,5 @@ type CommentRepo interface {
 	GetCommentByID(ctx context.Context, commentID utils.UUID) (*model.Comment, error)
 	GetLatestCommentTime(ctx context.Context, postID utils.UUID) (*time.Time, error)
 	ArchiveCommentByPostIDTx(ctx context.Context, tx *sql.Tx, postID utils.UUID) error
+	UpdateUserNameForSession(ctx context.Context, sessionID utils.UUID, newName string) error
 }

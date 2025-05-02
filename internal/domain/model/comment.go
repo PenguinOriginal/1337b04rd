@@ -11,6 +11,7 @@ type Comment struct {
 	CommentID       utils.UUID
 	PostID          utils.UUID
 	SessionID       utils.UUID
+	UserName        string
 	Content         string
 	ParentCommentID utils.UUID
 	ImageURLs       []string

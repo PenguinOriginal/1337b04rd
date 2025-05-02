@@ -1,5 +1,4 @@
-// If we keep DeletePost function, then we need one for comments as well
-// LATER: check if the mistakes are not dublicated across layers
+// Reviewed and double-checked
 package postgresql
 
 import (
@@ -29,8 +28,8 @@ func NewPostgresCommentRepo(db *sql.DB, logger *slog.Logger) *PostgresCommentRep
 func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.Comment) error {
 	query := `
 		INSERT INTO comments (
-			comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+			comment_id, post_id, session_id, user_name, comment_content, parent_comment_id, image_urls, created_at, is_archived
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
 	_, err := r.db.ExecContext(
@@ -39,6 +38,7 @@ func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.
 		comment.CommentID,
 		comment.PostID,
 		comment.SessionID,
+		comment.UserName,
 		comment.Content,
 		comment.ParentCommentID,
 		pq.Array(comment.ImageURLs),
@@ -47,7 +47,6 @@ func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.
 	)
 
 	if err != nil {
-		r.logger.Error("failed to create comment", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "CreateComment", "insert into comments", model.ErrDatabase)
 	}
 
@@ -56,7 +55,7 @@ func (r *PostgresCommentRepo) CreateComment(ctx context.Context, comment *model.
 
 func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID utils.UUID, includeArchived bool) ([]*model.Comment, error) {
 	query := `
-		SELECT comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
+		SELECT comment_id, post_id, session_id, user_name, comment_content, parent_comment_id, image_urls, created_at, is_archived
 		FROM comments
 		WHERE post_id = $1
 	`
@@ -69,8 +68,7 @@ func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID ut
 
 	rows, err := r.db.QueryContext(ctx, query, postID)
 	if err != nil {
-		r.logger.Error("failed to get comments", slog.Any("error", err))
-		return nil, logger.ErrorWrapper("repository", "GetCommentByPostID", "select from comments", model.ErrDatabase)
+		return nil, logger.ErrorWrapper("repository", "GetCommentsByPostID", "select from comments", model.ErrDatabase)
 	}
 	defer rows.Close()
 
@@ -82,6 +80,7 @@ func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID ut
 			&comment.CommentID,
 			&comment.PostID,
 			&comment.SessionID,
+			&comment.UserName,
 			&comment.Content,
 			&comment.ParentCommentID,
 			pq.Array(comment.ImageURLs),
@@ -89,15 +88,13 @@ func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID ut
 			&comment.IsArchived,
 		)
 		if err != nil {
-			r.logger.Error("failed to scan comment row", slog.Any("error", err))
-			return nil, logger.ErrorWrapper("repository", "GetCommentByPostID", "row scan", model.ErrDatabase)
+			return nil, logger.ErrorWrapper("repository", "GetCommentsByPostID", "row scan", model.ErrDatabase)
 		}
 		comments = append(comments, &comment)
 	}
 
 	if err = rows.Err(); err != nil {
-		r.logger.Error("rows iteration error", slog.Any("error", err))
-		return nil, logger.ErrorWrapper("repository", "GetCommentByPostID", "row iteration", model.ErrDatabase)
+		return nil, logger.ErrorWrapper("repository", "GetCommentsByPostID", "row iteration", model.ErrDatabase)
 	}
 
 	if len(comments) == 0 {
@@ -109,9 +106,9 @@ func (r *PostgresCommentRepo) GetCommentsByPostID(ctx context.Context, postID ut
 
 func (r *PostgresCommentRepo) GetCommentByID(ctx context.Context, commentID utils.UUID) (*model.Comment, error) {
 	query := `
-		SELECT comment_id, post_id, session_id, comment_content, parent_comment_id, image_urls, created_at, is_archived
+		SELECT comment_id, post_id, session_id, user_name, comment_content, parent_comment_id, image_urls, created_at, is_archived
 		FROM comments
-		WHERE comment_id = $1;
+		WHERE comment_id = $1
 	`
 
 	var c model.Comment
@@ -122,6 +119,7 @@ func (r *PostgresCommentRepo) GetCommentByID(ctx context.Context, commentID util
 		&c.CommentID,
 		&c.PostID,
 		&c.SessionID,
+		&c.UserName,
 		&c.Content,
 		&parentCommentID,
 		pq.Array(&imageURLs),
@@ -132,7 +130,6 @@ func (r *PostgresCommentRepo) GetCommentByID(ctx context.Context, commentID util
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, model.ErrCommentNotFound
 		}
-		r.logger.Error("failed to fetch comment", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("repository", "GetCommentByID", "scanning result", err)
 	}
 
@@ -153,13 +150,12 @@ func (r *PostgresCommentRepo) GetLatestCommentTime(ctx context.Context, postID u
 	query := `
 		SELECT MAX(created_at)
 		FROM comments
-		WHERE post_id = $1 AND is_archived = false;
+		WHERE post_id = $1 AND is_archived = false
 	`
 
 	var latestTime sql.NullTime
 	err := r.db.QueryRowContext(ctx, query, postID).Scan(&latestTime)
 	if err != nil {
-		r.logger.Error("failed to get latest comment time", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("repository", "GetLatestCommentTime", "select MAX(created_at)", model.ErrDatabase)
 	}
 
@@ -175,13 +171,12 @@ func (r *PostgresCommentRepo) ArchiveCommentByPostIDTx(ctx context.Context, tx *
 	query := `
 		UPDATE comments
 		SET is_archived = true
-		WHERE post_id = $1;
+		WHERE post_id = $1
 	`
 
 	result, err := tx.ExecContext(ctx, query, postID)
 	if err != nil {
-		r.logger.Error("failed to archive comments", slog.Any("error", err))
-		return logger.ErrorWrapper("repository", "ArchiveByPostID", "update comments", model.ErrDatabase)
+		return logger.ErrorWrapper("repository", "ArchiveCommentByPostID", "update comments", model.ErrDatabase)
 	}
 
 	rowsAffected, _ := result.RowsAffected()
@@ -189,5 +184,30 @@ func (r *PostgresCommentRepo) ArchiveCommentByPostIDTx(ctx context.Context, tx *
 		return model.ErrCommentNotFound
 	}
 
+	return nil
+}
+
+func (r *PostgresCommentRepo) UpdateUserNameForSession(ctx context.Context, sessionID utils.UUID, newName string) error {
+	query := `
+	UPDATE comments 
+	SET user_name = $1 
+	WHERE session_id = $2
+	`
+
+	result, err := r.db.ExecContext(ctx, query, newName, sessionID)
+	if err != nil {
+		return logger.ErrorWrapper("repository", "UpdateUserNameForSession", "updating user name for comment", model.ErrDatabase)
+	}
+
+	// To check whether we changed rows
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return logger.ErrorWrapper("repository", "UpdateUserNameForSession", "checking rows affected for comment", err)
+	}
+
+	if affected == 0 {
+		// If we did not update any row, it means there is no such comment
+		return model.ErrCommentNotFound
+	}
 	return nil
 }

@@ -14,4 +14,5 @@ type PostRepo interface {
 	GetAllPosts(ctx context.Context) ([]*model.Post, error)
 	ArchivePostTx(ctx context.Context, tx *sql.Tx, postID utils.UUID) error
 	DeleteExpiredPosts(ctx context.Context) error
+	UpdateUserNameForSession(ctx context.Context, sessionID utils.UUID, newName string) error
 }

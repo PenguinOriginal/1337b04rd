@@ -1,5 +1,4 @@
-// DB adapter
-// LATER: check if the mistakes are not dublicated across layers
+// Reviewed and double-checked
 package postgresql
 
 import (
@@ -42,7 +41,6 @@ func (r *PostgresPostRepo) CreatePost(ctx context.Context, post *model.Post) err
 	)
 
 	if err != nil {
-		r.logger.Error("failed to create post", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "CreatePost", "insert into posts", err)
 	}
 	return nil
@@ -71,27 +69,25 @@ func (r *PostgresPostRepo) GetPostByID(ctx context.Context, id utils.UUID) (*mod
 
 		if errors.Is(err, sql.ErrNoRows) {
 			// Post not found case
-			r.logger.Warn("post not found", slog.String("post_id", string(id)))
 			return nil, model.ErrPostNotFound
 		}
 
-		r.logger.Error("failed to get post by ID", slog.Any("error", err), slog.Any("post_id", id))
 		return nil, logger.ErrorWrapper("repository", "GetPostByID", "select post by ID", err)
 	}
 	return &post, nil
 }
 
-func (r *PostgresPostRepo) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
+// Pass "archived" value to retrieve either active or archived posts
+func (r *PostgresPostRepo) GetAllPosts(ctx context.Context, archived bool) ([]*model.Post, error) {
 	query := `
 	SELECT post_id, session_id, user_name, post_title, post_content, image_urls, created_at, is_archived
 	FROM posts 
-	WHERE is_archived = false
+	WHERE is_archived = $1
 	ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, archived)
 	if err != nil {
-		r.logger.Error("failed to get all posts", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("repository", "GetAllPosts", "query all posts", err)
 	}
 	defer rows.Close()
@@ -111,14 +107,12 @@ func (r *PostgresPostRepo) GetAllPosts(ctx context.Context) ([]*model.Post, erro
 			&post.CreatedAt,
 			&post.IsArchived,
 		); err != nil {
-			r.logger.Error("failed to scan post", slog.Any("error", err))
 			return nil, logger.ErrorWrapper("repository", "GetAllPosts", "scan post row", err)
 		}
 		posts = append(posts, &post)
 	}
-	// Logging errors during reading the query results
+
 	if err = rows.Err(); err != nil {
-		r.logger.Error("row iteration error in GetAllPosts", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("repository", "GetAllPosts", "rows iteration", err)
 	}
 	return posts, nil
@@ -133,24 +127,46 @@ func (r *PostgresPostRepo) ArchivePostTx(ctx context.Context, tx *sql.Tx, postID
 	// Execution of the query
 	result, err := tx.ExecContext(ctx, query, postID)
 	if err != nil {
-		// do I need to log this one here?
-		r.logger.Error("failed to archive post", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "ArchivePosts", "update is_archived", err)
 	}
 
 	// To check whether we changed rows
 	affected, err := result.RowsAffected()
 	if err != nil {
-		// Same questions
-		r.logger.Error("failed to get rows affected for archiving", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "ArchivePosts", "rows affected", err)
 	}
 
 	if affected == 0 {
 		// If we did not update any row, it means there is no such post
-		r.logger.Warn("no post archived", slog.Any("post_id", postID))
 		return model.ErrPostNotFound
 	}
 
+	return nil
+}
+
+// Need this to update username during current session
+func (r *PostgresPostRepo) UpdateUserNameForSession(ctx context.Context, sessionID utils.UUID, newName string) error {
+	query := `
+	UPDATE posts 
+	SET user_name = $1 
+	WHERE session_id = $2
+	`
+
+	// Execution of the query
+	result, err := r.db.ExecContext(ctx, query, newName, sessionID)
+	if err != nil {
+		return logger.ErrorWrapper("repository", "UpdateUserNameForSession", "updating new name in post", err)
+	}
+
+	// To check whether we changed rows
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return logger.ErrorWrapper("repository", "UpdateUserNameForSession", "checking rows affected for post", err)
+	}
+
+	if affected == 0 {
+		// If we did not update any row, it means there is no such post
+		return model.ErrPostNotFound
+	}
 	return nil
 }

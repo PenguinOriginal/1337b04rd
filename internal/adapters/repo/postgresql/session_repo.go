@@ -1,5 +1,4 @@
-// Revise this later
-// LATER: check if the mistakes are not dublicated across layers
+// To be reviewed
 package postgresql
 
 import (
@@ -36,7 +35,6 @@ func (r *PostgresSessionRepo) CreateSession(ctx context.Context, session *model.
 	)
 
 	if err != nil {
-		r.logger.Error("failed to create session", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "CreateSession", "insert into sessions", model.ErrDatabase)
 	}
 
@@ -63,10 +61,8 @@ func (r *PostgresSessionRepo) GetSessionByID(ctx context.Context, id utils.UUID)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			r.logger.Warn("session not found", slog.String("session_id", string(id)))
 			return nil, model.ErrSessionNotFound
 		}
-		r.logger.Error("failed to fetch session", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("repository", "GetSessionByID", "select from sessions", model.ErrDatabase)
 	}
 
@@ -82,9 +78,14 @@ func (r *PostgresSessionRepo) DeleteExpiredSession(ctx context.Context) error {
 	_, err := r.db.ExecContext(ctx, query)
 
 	if err != nil {
-		r.logger.Error("failed to delete expired sessions", slog.Any("error", err))
 		return logger.ErrorWrapper("repository", "DeleteExpiredSession", "delete expired sessions", model.ErrDatabase)
 	}
+
+	return nil
+}
+
+func (r *PostgresSessionRepo) UpdateUserName(ctx context.Context, id utils.UUID, name string) error {
+
 
 	return nil
 }

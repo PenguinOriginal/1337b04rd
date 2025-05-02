@@ -169,3 +169,7 @@ func (s *PostServiceImpl) ArchivePost(ctx context.Context, postID utils.UUID) er
 	s.logger.Info("post and comments are archived successfully", slog.String("post_id", string(postID)))
 	return nil
 }
+
+
+// Check the comments implementation and repo. There are some related files
+// What is ticker?
