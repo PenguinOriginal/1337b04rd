@@ -1,4 +1,4 @@
-// To be reviewed
+// Reviewed and double-checked
 package postgresql
 
 import (
@@ -80,12 +80,6 @@ func (r *PostgresSessionRepo) DeleteExpiredSession(ctx context.Context) error {
 	if err != nil {
 		return logger.ErrorWrapper("repository", "DeleteExpiredSession", "delete expired sessions", model.ErrDatabase)
 	}
-
-	return nil
-}
-
-func (r *PostgresSessionRepo) UpdateUserName(ctx context.Context, id utils.UUID, name string) error {
-
 
 	return nil
 }

@@ -46,8 +46,7 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imag
 
 	// Check if title & session are not empty
 	if err := post.ValidatePost(); err != nil {
-		s.logger.Warn("invalid post input",
-			slog.Any("error", err))
+		s.logger.Warn("invalid post input", slog.Any("error", err))
 		return logger.ErrorWrapper("service", "CreatePost", "validation", err)
 	}
 
@@ -72,7 +71,6 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imag
 
 	// Save to repo
 	if err := s.repo.CreatePost(ctx, post); err != nil {
-		s.logger.Error("failed to create post", slog.Any("err", err))
 		return logger.ErrorWrapper("service", "CreatePost", "saving post to repo", err)
 	}
 
@@ -82,10 +80,9 @@ func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imag
 
 // GetAllPosts retrieves all non-archived posts from the database.
 // Used to display the post catalog.
-func (s *PostServiceImpl) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
-	posts, err := s.repo.GetAllPosts(ctx)
+func (s *PostServiceImpl) GetAllPosts(ctx context.Context, archived bool) ([]*model.Post, error) {
+	posts, err := s.repo.GetAllPosts(ctx, archived)
 	if err != nil {
-		s.logger.Error("failed to fetch posts", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("service", "GetAllPosts", "fetching posts", err)
 	}
 	s.logger.Info("fetched posts successfully", slog.Int("count", len(posts)))
@@ -97,7 +94,6 @@ func (s *PostServiceImpl) GetAllPosts(ctx context.Context) ([]*model.Post, error
 func (s *PostServiceImpl) GetPostByID(ctx context.Context, id utils.UUID) (*model.Post, error) {
 	post, err := s.repo.GetPostByID(ctx, id)
 	if err != nil {
-		s.logger.Error("failed to get post by id", slog.Any("error", err))
 		return nil, logger.ErrorWrapper("service", "GetPostByID", "fetching post by id", err)
 	}
 	s.logger.Info("fetched post by id successfully", slog.String("post_id", string(id)))
@@ -137,7 +133,7 @@ func (s *PostServiceImpl) ArchivePost(ctx context.Context, postID utils.UUID) er
 	}
 
 	if !shouldArchive {
-		s.logger.Info("post is not eligible for archival yet", slog.String("post_id", string(postID)))
+		s.logger.Debug("post is not eligible for archival yet", slog.String("post_id", string(postID)))
 		return nil
 	}
 
@@ -169,7 +165,3 @@ func (s *PostServiceImpl) ArchivePost(ctx context.Context, postID utils.UUID) er
 	s.logger.Info("post and comments are archived successfully", slog.String("post_id", string(postID)))
 	return nil
 }
-
-
-// Check the comments implementation and repo. There are some related files
-// What is ticker?

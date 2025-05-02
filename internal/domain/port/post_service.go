@@ -9,7 +9,7 @@ import (
 
 type PostService interface {
 	CreatePost(ctx context.Context, post *model.Post, imageData map[string]io.Reader) error
-	GetAllPosts(ctx context.Context) ([]*model.Post, error)
+	GetAllPosts(ctx context.Context, archived bool) ([]*model.Post, error)
 	GetPostByID(ctx context.Context, postID utils.UUID) (*model.Post, error)
 	ArchivePost(ctx context.Context, postID utils.UUID) error
 }
