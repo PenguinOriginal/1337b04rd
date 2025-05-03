@@ -21,11 +21,3 @@ func NewHandler(post port.PostService, comment port.CommentService, session port
 		sessionService: session,
 	}
 }
-
-// func GetSessionFromContext(ctx context.Context) *model.Session {
-// 	val := ctx.Value(middleware.sessionKey)
-// 	if session, ok := val.(*model.Session); ok {
-// 		return session
-// 	}
-// 	return nil
-// }

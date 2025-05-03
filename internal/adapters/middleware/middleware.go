@@ -16,6 +16,10 @@ type sessionKeyType string
 
 const sessionKey sessionKeyType = "user-session"
 
+type SessionData struct {
+	AvatarURL string
+}
+
 func SessionMiddleware(sessionService port.SessionService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,4 +64,12 @@ func SessionMiddleware(sessionService port.SessionService) func(http.Handler) ht
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func GetSessionFromContext(ctx context.Context) *model.Session {
+	val := ctx.Value(middleware.sessionKey)
+	if session, ok := val.(*model.Session); ok {
+		return session
+	}
+	return nil
 }
