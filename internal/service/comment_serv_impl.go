@@ -110,16 +110,8 @@ func (s *CommentServiceImpl) GetCommentsByPostID(ctx context.Context, postID uti
 	// if /post - false (only comments where is_archived = false)
 	comments, err := s.commentRepo.GetCommentsByPostID(ctx, postID, includeArchived)
 	if err != nil {
-		s.logger.Error("failed to get comments by post id", slog.String("postID", string(postID)), slog.Any("error", err))
 		return nil, logger.ErrorWrapper("service", "GetCommentsByPostID", "fetching comments by post id", err)
 	}
 	s.logger.Info("retrieved comments by post id successfully", slog.String("post_id", string(postID)), slog.Bool("include_archived", includeArchived))
 	return comments, nil
-}
-
-// ArchiveCommentsByPostID marks all comments of a post as archived.
-// Used when a post is archived/deleted and comments shouldn't appear anymore.
-func (s *CommentServiceImpl) ArchiveCommentsByPostIDTx(ctx context.Context, postID utils.UUID) error {
-
-	return nil
 }

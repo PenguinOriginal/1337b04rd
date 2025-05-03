@@ -3,7 +3,7 @@ Setup HTTP router (net/http)
 Add middleware to router
 Implement user registration + avatar fetching
 Implement session creation (cookie-based, UUID?)
-Store session info to DB
+
 Middleware for session validation
 Implement logout endpoint (?) (delete session + cookie)
 Fetch avatar from Rick & Morty API on user creation
