@@ -1,5 +1,5 @@
 Check if we need .env for Docker
-Setup HTTP router (net/http)
+
 Add middleware to router
 Implement user registration + avatar fetching
 Implement session creation (cookie-based, UUID?)
@@ -12,9 +12,15 @@ Store only URL in DB (do not download avatar)
 Write testing (20% coverage)
 Setup connection to PostgreSQL via sql/pq
 
-Implement create/list/delete post handlers - may not need delete post handler
-Implement create/list comment handlers
 Link comments to posts, allow anonymous or session authorship
+
+
+
+Actual Do To list:
+20% test coverage
+CONFIG
+Timers and tickers
+
 
 
 Endpoints:
