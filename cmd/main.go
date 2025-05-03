@@ -40,23 +40,25 @@ func main() {
 	sessionMiddleware := middleware.SessionMiddleware(sessionService)
 
 	// ServerMux + Routing
+	// Match requests to corresponding handlers
 	mux := http.NewServeMux()
 
-	// Static assets and templates
+	// Static assets and templates, serves them to client
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Routes
+	// Converts h.Catalog(w, r) --> http.Handler
 	mux.Handle("/", sessionMiddleware(http.HandlerFunc(h.Catalog)))              // GET /
 	mux.Handle("/archive", sessionMiddleware(http.HandlerFunc(h.Archive)))       // GET /archive
 	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(h.Post)))           // GET /posts/{id}
 	mux.Handle("/create", sessionMiddleware(http.HandlerFunc(h.CreatePostForm))) // GET /create
 	mux.Handle("/posts", sessionMiddleware(http.HandlerFunc(h.SubmitPost)))      // POST /posts
 	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(h.SubmitComment)))  // POST /posts/{id}/comments
-	mux.Handle("/avatars/", sessionMiddleware(http.HandlerFunc(h.Avatar)))       // GET /avatars/{name}
 	mux.Handle("/error", http.HandlerFunc(h.ErrorPage))                          // GET /error
 
 	// Server config
+	// Gets port from environemt variables
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -65,7 +67,7 @@ func main() {
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      mux,
-		ReadTimeout:  10 * time.Second,
+		ReadTimeout:  10 * time.Second, // how long can I wait for the user to finish sending request?
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}

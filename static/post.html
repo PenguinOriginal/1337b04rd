@@ -52,6 +52,11 @@
             max-width: 100px;
             max-height: 100px;
         }
+
+        .reply-note {
+            font-size: 0.9em;
+            color: #555;
+        }
     </style>
 </head>
 <body>
@@ -88,7 +93,7 @@
                     <img src="{{.AvaterLink}}" alt="no pic" width="50px" height="50px">
                     <b>{{.UserName}}</b>
                     {{.DataTime}}
-                    {{.CommentID}}
+                    <a href="#" onclick="setReplyTo('{{.CommentID}}'); return false;"><strong>{{.CommentID}}</strong></a>
                 </div>
                 <div class="content">
                     {{range .ImageLinks}}
@@ -98,6 +103,9 @@
                     {{end}}
                     <div class="text">
                         {{.Content}}
+                        {{if .ReplyToID}}
+                        <div class="reply-note"><em>Reply to: {{.ReplyToID}}</em></div>
+                        {{end}}
                     </div>
                 </div>
             </li>
@@ -109,6 +117,8 @@
     <div class="add-comment">
         <h3>Add a Comment</h3>
         <form action="/submit-comment" method="POST" enctype="multipart/form-data">
+            <!-- Reply target gets inserted here -->
+            <input type="hidden" name="reply_to" id="replyToInput" value="">
             <textarea name="comment" placeholder="Write your comment here..." rows="4" cols="50"></textarea>
             <br>
             <label for="file">Attach image(s):</label>
@@ -118,5 +128,14 @@
         </form>
     </div>
 </main>
+
+<script>
+    function setReplyTo(commentID) {
+      const input = document.getElementById("replyToInput");
+      if (input) {
+        input.value = commentID;
+      }
+    }
+  </script>
 </body>
 </html>
