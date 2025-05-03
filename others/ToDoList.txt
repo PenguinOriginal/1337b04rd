@@ -26,6 +26,4 @@ GET /create - open a form to create a new thread/post (create-post.html)
 POST /posts - submit new post (via create-post.html)
 
 POST /posts/{id}/comments - submit a comment on a post  (post.html)
-
-GET /avatars/{name} - show user avatar (-)
 GET /error - show error screen (error.html)

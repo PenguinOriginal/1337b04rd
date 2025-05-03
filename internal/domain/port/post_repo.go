@@ -13,6 +13,5 @@ type PostRepo interface {
 	GetPostByID(ctx context.Context, id utils.UUID) (*model.Post, error)
 	GetAllPosts(ctx context.Context, archived bool) ([]*model.Post, error)
 	ArchivePostTx(ctx context.Context, tx *sql.Tx, postID utils.UUID) error
-	DeleteExpiredPosts(ctx context.Context) error
 	UpdateUserNameForSession(ctx context.Context, sessionID utils.UUID, newName string) error
 }

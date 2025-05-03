@@ -1,19 +1,77 @@
+// Work on this later
 package main
+
+import (
+	"1337b04rd/internal/adapters/handler"
+	"1337b04rd/internal/adapters/middleware"
+	"1337b04rd/internal/adapters/repo/postgresql"
+	"1337b04rd/internal/service"
+	imageuploader "1337b04rd/internal/service/image_uploader"
+	"1337b04rd/pkg/logger"
+	"1337b04rd/pkg/utils"
+	"log"
+	"net/http"
+	"os"
+	"time"
+)
 
 func main() {
 
+	// Call logger here and input in every layer later
+	logFile := "1337b04rd/logging/logging.log"
+	MyLogger := logger.GetLoggerObject(logFile)
+
+	// Init DB, S3, and services
+	db := utils.InitPostgres()
+	sessionRepo := postgresql.NewPostgresSessionRepo(db, MyLogger)
+	postRepo := postgresql.NewPostgresPostRepo(db, MyLogger)
+	commentRepo := postgresql.NewPostgresCommentRepo(db, MyLogger)
+	uploader := imageuploader.NewLocalUploader("/data", MyLogger)
+
+	// Services
+	sessionService := service.NewSessionServiceImpl(sessionRepo, postRepo, commentRepo, MyLogger)
+	postService := service.NewPostServiceImpl(postRepo, commentRepo, db, uploader, MyLogger)
+	commentService := service.NewCommentServiceImpl(postRepo, commentRepo, uploader, MyLogger)
+
+	// Handlers
+	h := handler.NewHandler(postService, commentService, sessionService)
+
+	// Middleware
+	sessionMiddleware := middleware.SessionMiddleware(sessionService)
+
+	// ServerMux + Routing
+	mux := http.NewServeMux()
+
+	// Static assets and templates
+	fs := http.FileServer(http.Dir("./static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// Routes
+	mux.Handle("/", sessionMiddleware(http.HandlerFunc(h.Catalog)))              // GET /
+	mux.Handle("/archive", sessionMiddleware(http.HandlerFunc(h.Archive)))       // GET /archive
+	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(h.Post)))           // GET /posts/{id}
+	mux.Handle("/create", sessionMiddleware(http.HandlerFunc(h.CreatePostForm))) // GET /create
+	mux.Handle("/posts", sessionMiddleware(http.HandlerFunc(h.SubmitPost)))      // POST /posts
+	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(h.SubmitComment)))  // POST /posts/{id}/comments
+	mux.Handle("/avatars/", sessionMiddleware(http.HandlerFunc(h.Avatar)))       // GET /avatars/{name}
+	mux.Handle("/error", http.HandlerFunc(h.ErrorPage))                          // GET /error
+
+	// Server config
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	log.Printf("Server running on port %s", port)
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("server failed: %v", err)
+	}
 }
-
-// func main() {
-
-// 	// Call logger here and input in every layer later
-// 	logFile := "1337b04rd/logging/logging.log"
-// 	MyLogger := logger.GetLoggerObject(logFile)
-// 	// uploader := imageuploader.NewLocalUploader(baseURL, "data/")
-
-// 	// db := ConnectionToDB
-// 	// postRepo := postgresql.NewPostgresPostRepo(db, MyLogger)
-// 	// commentRepo := postgresql.NewPostgresCommentRepo(db, MyLogger)
-// 	// sessionRepo := postgresql.NewPostgresSessionRepo(db, MyLogger)
-
-// }

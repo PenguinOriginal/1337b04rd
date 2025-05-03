@@ -1,7 +1,6 @@
 package handler
 
-
-// Sort comments from comment_serv_impl.go, to distinguish between replies and regular 
+// Sort comments from comment_serv_impl.go, to distinguish between replies and regular
 // comments. Change html file accordingly
 
 // type CommentThread struct {
