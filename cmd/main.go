@@ -2,6 +2,7 @@
 package main
 
 import (
+	"1337b04rd/config"
 	"1337b04rd/internal/adapters/handler"
 	"1337b04rd/internal/adapters/middleware"
 	"1337b04rd/internal/adapters/repo/postgresql"
@@ -18,15 +19,17 @@ import (
 func main() {
 
 	// Call logger here and input in every layer later
-	logFile := "1337b04rd/logging/logging.log"
-	MyLogger := logger.GetLoggerObject(logFile)
+	cfg := config.LoadConfig()
+	MyLogger := logger.GetLoggerObject(cfg.LogFilePath)
 
-	// Init DB, S3, and services
+	// Init PostgreSQL
 	db := utils.InitPostgres()
+
+	// Repositories
 	sessionRepo := postgresql.NewPostgresSessionRepo(db, MyLogger)
 	postRepo := postgresql.NewPostgresPostRepo(db, MyLogger)
 	commentRepo := postgresql.NewPostgresCommentRepo(db, MyLogger)
-	uploader := imageuploader.NewLocalUploader("/data", MyLogger)
+	uploader := imageuploader.NewLocalUploader(cfg.UploadDir, MyLogger)
 
 	// Services
 	sessionService := service.NewSessionServiceImpl(sessionRepo, postRepo, commentRepo, MyLogger)
@@ -64,6 +67,7 @@ func main() {
 		port = "8080"
 	}
 
+	// HTTP Server Config
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      mux,
@@ -72,7 +76,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	log.Printf("Server running on port %s", port)
+	log.Printf("Server running on port %s", cfg.Port)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
