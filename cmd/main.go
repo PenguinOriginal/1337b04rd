@@ -11,6 +11,8 @@ import (
 	"1337b04rd/pkg/logger"
 	"1337b04rd/pkg/utils"
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +20,29 @@ import (
 )
 
 func main() {
+
+	// Define flags
+	port := flag.String("port", "", "Port number")
+	help := flag.Bool("help", false, "Show this screen.")
+
+	// Override default usage text
+	flag.Usage = func() {
+		fmt.Println("hacker board\n")
+		fmt.Println("Usage:")
+		fmt.Println("  1337b04rd [--port <N>]")
+		fmt.Println("  1337b04rd --help\n")
+		fmt.Println("Options:")
+		fmt.Println("  --help       Show this screen.")
+		fmt.Println("  --port N     Port number.")
+	}
+
+	flag.Parse()
+
+	// Show help and exit
+	if *help {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	// Call logger here and input in every layer later
 	cfg := config.LoadConfig()
@@ -61,16 +86,18 @@ func main() {
 	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(h.SubmitComment)))  // POST /posts/{id}/comments
 	mux.Handle("/error", http.HandlerFunc(h.ErrorPage))                          // GET /error
 
-	// Server config
-	// Gets port from environemt variables
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	// If flag is not from CLI, then use environment
+	finalPort := *port
+	if finalPort == "" {
+		finalPort = os.Getenv("PORT")
+		if finalPort == "" {
+			finalPort = "8080"
+		}
 	}
 
 	// HTTP Server Config
 	server := &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + finalPort,
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second, // how long can I wait for the user to finish sending request?
 		WriteTimeout: 10 * time.Second,
