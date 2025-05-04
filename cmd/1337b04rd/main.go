@@ -27,10 +27,10 @@ func main() {
 
 	// Override default usage text
 	flag.Usage = func() {
-		fmt.Println("hacker board\n")
+		fmt.Println("hacker board")
 		fmt.Println("Usage:")
 		fmt.Println("  1337b04rd [--port <N>]")
-		fmt.Println("  1337b04rd --help\n")
+		fmt.Println("  1337b04rd --help")
 		fmt.Println("Options:")
 		fmt.Println("  --help       Show this screen.")
 		fmt.Println("  --port N     Port number.")
