@@ -1,4 +1,3 @@
-// Work on this later
 package main
 
 import (

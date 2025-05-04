@@ -24,7 +24,7 @@ func LoadConfig() *Config {
 		DBUser:      getEnv("DB_USER", "postgres"),
 		DBPassword:  getEnv("DB_PASSWORD", "password"),
 		DBName:      getEnv("DB_NAME", "leetboard"),
-		LogFilePath: getEnv("LOG_FILE_PATH", "1337b04rd/logging/logging.log"),
+		LogFilePath: getEnv("LOG_FILE_PATH", "logging/logging.log"),
 		UploadDir:   getEnv("UPLOAD_DIR", "/data"),
 	}
 
