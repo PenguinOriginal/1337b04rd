@@ -1,21 +1,3 @@
-Check if we need .env for Docker
-
-Add middleware to router
-Implement user registration + avatar fetching
-Implement session creation (cookie-based, UUID?)
-
-Middleware for session validation
-Implement logout endpoint (?) (delete session + cookie)
-Fetch avatar from Rick & Morty API on user creation
-Store only URL in DB (do not download avatar)
-
-Write testing (20% coverage)
-Setup connection to PostgreSQL via sql/pq
-
-Link comments to posts, allow anonymous or session authorship
-
-
-
 Actual Do To list:
 20% test coverage
 CONFIG

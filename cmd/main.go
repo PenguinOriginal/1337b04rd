@@ -10,6 +10,7 @@ import (
 	imageuploader "1337b04rd/internal/service/image_uploader"
 	"1337b04rd/pkg/logger"
 	"1337b04rd/pkg/utils"
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -75,6 +76,30 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
+
+	// Timers for archivation logic and cleaning expired sessions
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute) // check every minute
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				ctx := context.Background()
+
+				// Archive eligible posts
+				posts, err := postService.GetAllPosts(ctx, false)
+				if err == nil {
+					for _, p := range posts {
+						_ = postService.ArchivePost(ctx, p.PostID)
+					}
+				}
+
+				// Delete expired sessions
+				_ = sessionService.DeleteExpiredSessions(ctx)
+			}
+		}
+	}()
 
 	log.Printf("Server running on port %s", cfg.Port)
 	if err := server.ListenAndServe(); err != nil {
