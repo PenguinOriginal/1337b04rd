@@ -10,6 +10,7 @@ import (
 )
 
 func (h *Handler) SubmitComment(w http.ResponseWriter, r *http.Request) {
+	
 	session := middleware.GetSessionFromContext(r.Context())
 	if session == nil {
 		http.Error(w, "session not found", http.StatusUnauthorized)

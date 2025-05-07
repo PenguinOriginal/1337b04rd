@@ -1,9 +1,7 @@
-# Work on this later
-version: '3.8'
-
 services:
   db:
     image: postgres:15
+    restart: always # makes sure that container restarts if it is crashed
     container_name: leetboard_db
     environment:
       POSTGRES_DB: leetboard
@@ -12,32 +10,38 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: always # makes sure that container restarts if it is crashed
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U leetuser"]
       interval: 5s
       timeout: 5s
       retries: 3 
-    ports:
-      - "5432:5432"
 
   app:
-    # specify image?
-    build: #why?
-      context: .
+    build:
+      context: . #build from everything in the current directory (1337b04rd)
     container_name: leetboard_app
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:8080"
     environment:
+      PORT: ${PORT}
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: leetuser
       DB_PASSWORD: leetpass
       DB_NAME: leetboard
+      UPLOAD_DIR: /data
+      LOG_FILE_PATH: logging/logging.log
+      SESSION_COOKIE_NAME: session_id
+      SESSION_DURATION_DAYS: 7
+      AVATAR_API_BASE_URL: https://rickandmortyapi.com/api/character
+    volumes:
+      - ./data:/data
+      - ./logging:/logging
     depends_on:
       db:
         condition: service_healthy
-    command: ["./1337b04rd", "--port", "8080"]
     restart: always
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/"]  
