@@ -1,3 +1,4 @@
+// Add method checks
 package handler
 
 import (
@@ -6,20 +7,14 @@ import (
 	"1337b04rd/pkg/utils"
 	"html/template"
 	"io"
-	"log/slog"
 	"net/http"
 )
 
-// Must panics if the static file is missing
-// Parse html files
-var catalogTpl = template.Must(template.ParseFiles("static/catalog.html"))
-var archiveTpl = template.Must(template.ParseFiles("static/archive.html"))
-var postTpl = template.Must(template.ParseFiles("static/post.html"))
-var archivePostTpl = template.Must(template.ParseFiles("static/archive-post.html"))
-var createPostTpl = template.Must(template.ParseFiles("static/create-post.html"))
-
 // GET /
 func (h *Handler) Catalog(w http.ResponseWriter, r *http.Request) {
+
+	// Check method first?
+
 	session := middleware.GetSessionFromContext(r.Context())
 	if session == nil {
 		http.Error(w, "session not found", http.StatusUnauthorized)
@@ -28,8 +23,15 @@ func (h *Handler) Catalog(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := h.postService.GetAllPosts(r.Context(), false) // false = not archived
 	if err != nil {
-		slog.Error("failed to get posts", slog.Any("error", err))
+		h.logger.Error("failed to get posts", "error", err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	tpl, err := template.ParseFiles("static/catalog.html")
+	if err != nil {
+		h.logger.Error("failed to load catalog.html", "error", err)
+		http.Error(w, "Template load error", http.StatusInternalServerError)
 		return
 	}
 
@@ -42,8 +44,8 @@ func (h *Handler) Catalog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Renders the catalog page with data struct
-	if err := catalogTpl.Execute(w, data); err != nil {
-		slog.Error("failed to render catalog", slog.Any("error", err))
+	if err := tpl.Execute(w, data); err != nil {
+		h.logger.Error("failed to render catalog", "error", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
@@ -57,8 +59,15 @@ func (h *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := h.postService.GetAllPosts(r.Context(), true) // true = archived
 	if err != nil {
-		slog.Error("failed to get archived posts", slog.Any("error", err))
+		h.logger.Error("failed to get archived posts", "error", err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	tpl, err := template.ParseFiles("static/archive.html")
+	if err != nil {
+		h.logger.Error("failed to load archive.html", "error", err)
+		http.Error(w, "Template load error", http.StatusInternalServerError)
 		return
 	}
 
@@ -70,8 +79,8 @@ func (h *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 		Posts:   posts,
 	}
 
-	if err := archiveTpl.Execute(w, data); err != nil {
-		slog.Error("failed to render archive", slog.Any("error", err))
+	if err := tpl.Execute(w, data); err != nil {
+		h.logger.Error("failed to render archive", "error", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
@@ -93,7 +102,7 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
 	// Fetch the post
 	post, err := h.postService.GetPostByID(r.Context(), utils.UUID(postID))
 	if err != nil {
-		slog.Error("failed to fetch post", slog.Any("error", err))
+		h.logger.Error("failed to get post", "error", err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
@@ -101,8 +110,20 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
 	// Fetch the comments
 	comments, err := h.commentService.GetCommentsByPostID(r.Context(), post.PostID, post.IsArchived)
 	if err != nil {
-		slog.Error("failed to fetch comments", slog.Any("error", err))
+		h.logger.Error("failed to get comments", "error", err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		return
+	}
+
+	tplFile := "static/post.html"
+	if post.IsArchived {
+		tplFile = "static/archive-post.html"
+	}
+
+	tpl, err := template.ParseFiles(tplFile)
+	if err != nil {
+		h.logger.Error("failed to load post template", "file", tplFile, "error", err)
+		http.Error(w, "Template load error", http.StatusInternalServerError)
 		return
 	}
 
@@ -116,15 +137,8 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
 		Session:  &middleware.SessionData{AvatarURL: session.AvatarURL},
 	}
 
-	var tpl *template.Template
-	if post.IsArchived {
-		tpl = archivePostTpl
-	} else {
-		tpl = postTpl
-	}
-
 	if err := tpl.Execute(w, data); err != nil {
-		slog.Error("failed to render post page", slog.Any("error", err))
+		h.logger.Error("failed to render post", "error", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
@@ -136,14 +150,21 @@ func (h *Handler) CreatePostForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tpl, err := template.ParseFiles("static/create-post.html")
+	if err != nil {
+		h.logger.Error("failed to load create-post.html", "error", err)
+		http.Error(w, "Template load error", http.StatusInternalServerError)
+		return
+	}
+
 	data := struct {
 		Session *middleware.SessionData
 	}{
 		Session: &middleware.SessionData{AvatarURL: session.AvatarURL},
 	}
 
-	if err := createPostTpl.Execute(w, data); err != nil {
-		slog.Error("failed to render create-post.html", slog.Any("error", err))
+	if err := tpl.Execute(w, data); err != nil {
+		h.logger.Error("failed to render create-post", "error", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }
@@ -165,10 +186,12 @@ func (h *Handler) SubmitPost(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("comment")
 	name := r.FormValue("name")
 
-	// Get uploaded file from html
-	file, fileHeader, err := r.FormFile("file")
 	// Create imageData for service methods
 	var imageData map[string]io.Reader
+
+	// Get uploaded file from html
+	file, fileHeader, err := r.FormFile("file")
+
 	if err == nil && file != nil {
 		defer file.Close()
 		imageData = map[string]io.Reader{fileHeader.Filename: file}
@@ -178,7 +201,7 @@ func (h *Handler) SubmitPost(w http.ResponseWriter, r *http.Request) {
 	if name != "" {
 		err := h.sessionService.OverrideUserName(r.Context(), session.SessionID, name)
 		if err != nil {
-			slog.Error("failed to override user name", slog.Any("error", err))
+			h.logger.Error("failed to override username", "error", err)
 			http.Redirect(w, r, "/error", http.StatusSeeOther)
 			return
 		}
@@ -193,11 +216,12 @@ func (h *Handler) SubmitPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.postService.CreatePost(r.Context(), post, imageData); err != nil {
-		slog.Error("failed to create post", slog.Any("error", err))
+		h.logger.Error("failed to create post", "error", err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
 
+	h.logger.Info("post created", "post_id", post.PostID)
 	// Redirect to the new post page
 	http.Redirect(w, r, "/posts/"+string(post.PostID), http.StatusSeeOther)
 }

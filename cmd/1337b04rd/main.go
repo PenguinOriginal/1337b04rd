@@ -11,7 +11,6 @@ import (
 	"1337b04rd/pkg/utils"
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -25,21 +24,13 @@ func main() {
 	help := flag.Bool("help", false, "Show this screen.")
 
 	// Override default usage text
-	flag.Usage = func() {
-		fmt.Println("hacker board")
-		fmt.Println("Usage:")
-		fmt.Println("  1337b04rd [--port <N>]")
-		fmt.Println("  1337b04rd --help")
-		fmt.Println("Options:")
-		fmt.Println("  --help       Show this screen.")
-		fmt.Println("  --port N     Port number.")
-	}
+	flag.Usage = utils.PrintUsage
 
 	flag.Parse()
 
 	// Show help and exit
 	if *help {
-		flag.Usage()
+		utils.PrintUsage()
 		os.Exit(0)
 	}
 
@@ -62,7 +53,7 @@ func main() {
 	commentService := service.NewCommentServiceImpl(postRepo, commentRepo, uploader, MyLogger)
 
 	// Handlers
-	h := handler.NewHandler(postService, commentService, sessionService)
+	h := handler.NewHandler(postService, commentService, sessionService, MyLogger)
 
 	// Middleware
 	sessionMiddleware := middleware.SessionMiddleware(sessionService)
@@ -108,22 +99,15 @@ func main() {
 		ticker := time.NewTicker(1 * time.Minute) // check every minute
 		defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				ctx := context.Background()
-
-				// Archive eligible posts
-				posts, err := postService.GetAllPosts(ctx, false)
-				if err == nil {
-					for _, p := range posts {
-						_ = postService.ArchivePost(ctx, p.PostID)
-					}
+		for range ticker.C {
+			ctx := context.Background()
+			posts, err := postService.GetAllPosts(ctx, false)
+			if err == nil {
+				for _, p := range posts {
+					_ = postService.ArchivePost(ctx, p.PostID)
 				}
-
-				// Delete expired sessions
-				_ = sessionService.DeleteExpiredSessions(ctx)
 			}
+			_ = sessionService.DeleteExpiredSessions(ctx)
 		}
 	}()
 
