@@ -28,13 +28,12 @@ func NewPostServiceImpl(repo port.PostRepo, commentRepo port.CommentRepo, db *sq
 		commentRepo: commentRepo,
 		db:          db,
 		uploader:    uploader,
-		logger:      logger}
+		logger:      logger,
+	}
 }
 
 // imageData should come from handler
-// LATER: extract sessionID from cookie in handler and inject into post.SessionID
 func (s *PostServiceImpl) CreatePost(ctx context.Context, post *model.Post, imageData map[string]io.Reader) error {
-
 	// Assign PostID and CreatedAt
 	UUIDnum, err := utils.GenerateUUID()
 	if err != nil {
@@ -103,7 +102,6 @@ func (s *PostServiceImpl) GetPostByID(ctx context.Context, id utils.UUID) (*mode
 // ArchivePost marks a post (and its comments) as archived.
 // Used for removing content from the board (e.g., moderation, TTL).
 func (s *PostServiceImpl) ArchivePost(ctx context.Context, postID utils.UUID) error {
-
 	// Get the post by ID to retrieve its latest comment
 	post, err := s.repo.GetPostByID(ctx, postID)
 	if err != nil {

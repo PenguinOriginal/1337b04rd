@@ -26,13 +26,12 @@ func NewCommentServiceImpl(repo port.PostRepo, commentRepo port.CommentRepo, upl
 		repo:        repo,
 		commentRepo: commentRepo,
 		uploader:    uploader,
-		logger:      logger}
+		logger:      logger,
+	}
 }
 
 // CreateComment adds a new comment or reply to a post
-// LATER HANDLER: extract SessionID and PostID from the handler, prepare imageData map
 func (s *CommentServiceImpl) CreateComment(ctx context.Context, comment *model.Comment, imageData map[string]io.Reader) error {
-
 	// Assign CommentID and CreatedAt
 	UUIDnum, err := utils.GenerateUUID()
 	if err != nil {
@@ -104,7 +103,6 @@ func (s *CommentServiceImpl) CreateComment(ctx context.Context, comment *model.C
 // GetCommentsByPostID retrieves all comments for a given post.
 // Needed to display the comment thread for a post.
 func (s *CommentServiceImpl) GetCommentsByPostID(ctx context.Context, postID utils.UUID, includeArchived bool) ([]*model.Comment, error) {
-
 	// includeArchived is a flag from handler that determines whether repo should return only active comments or all comments
 	// if user visits /archive - true (all comments includig archived)
 	// if /post - false (only comments where is_archived = false)
