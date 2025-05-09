@@ -64,9 +64,9 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Converts h.Catalog(w, r) --> http.Handler
-	mux.Handle("/", sessionMiddleware(http.HandlerFunc(h.Catalog)))        // GET /
-	mux.Handle("/archive", sessionMiddleware(http.HandlerFunc(h.Archive))) // GET /archive
-	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/", http.HandlerFunc(h.Catalog))
+	mux.Handle("/archive", http.HandlerFunc(h.Archive)) // GET /archive
+	mux.Handle("/posts/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			h.Post(w, r)
 		} else if r.Method == http.MethodPost {
@@ -75,9 +75,9 @@ func main() {
 			utils.LogWarn(MyLogger, "MuxRouter", "invalid method for /posts/", "method", r.Method)
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	})))
-	mux.Handle("/create", sessionMiddleware(http.HandlerFunc(h.CreatePostForm))) // GET /create
-	mux.Handle("/posts", sessionMiddleware(http.HandlerFunc(h.SubmitPost)))      // POST /posts
+	}))
+	mux.Handle("/create", http.HandlerFunc(h.CreatePostForm)) // GET /create
+	mux.Handle("/submit-post", http.HandlerFunc(h.SubmitPost))     // POST /posts
 	mux.Handle("/error", http.HandlerFunc(h.ErrorPage))                          // GET /error
 
 	// If flag is not from CLI, then use environment
@@ -89,14 +89,19 @@ func main() {
 		}
 	}
 
-	// HTTP Server Config
-	server := &http.Server{
-		Addr:         ":" + finalPort,
-		Handler:      mux,
-		ReadTimeout:  10 * time.Second, // how long can I wait for the user to finish sending request?
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
+	// Apply middlewares: CORS → Session → mux
+handler := middleware.CORSMiddleware()(mux)
+handler = sessionMiddleware(handler)
+
+server := &http.Server{
+	Addr:         ":" + finalPort,
+	Handler:      handler,
+	ReadTimeout:  10 * time.Second,
+	WriteTimeout: 10 * time.Second,
+	IdleTimeout:  60 * time.Second,
+}
+
+	
 
 	// Timers for archivation logic and cleaning expired sessions
 	go func() {
