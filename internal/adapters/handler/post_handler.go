@@ -30,7 +30,7 @@ func (h *Handler) Catalog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tpl, err := template.ParseFiles("static/catalog.html")
+	tpl, err := template.ParseFiles(templates["catalog"])
 	if err != nil {
 		utils.LogError(h.logger, "Catalog", "failed to load template", err)
 		http.Error(w, "Template load error", http.StatusInternalServerError)
