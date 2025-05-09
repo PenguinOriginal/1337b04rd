@@ -5,15 +5,16 @@ import (
 	"1337b04rd/internal/domain/model"
 	"1337b04rd/pkg/utils"
 	"io"
-	"log/slog"
 	"net/http"
 	"strings"
 )
 
 func (h *Handler) SubmitComment(w http.ResponseWriter, r *http.Request) {
+	const fn = "SubmitComment"
+
 	// Only allow POST method
 	if r.Method != http.MethodPost {
-		h.logger.Warn("invalid method", "method", r.Method)
+		utils.LogWarn(h.logger, fn, "invalid method", "method", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -21,14 +22,13 @@ func (h *Handler) SubmitComment(w http.ResponseWriter, r *http.Request) {
 	// Session check
 	session := middleware.GetSessionFromContext(r.Context())
 	if session == nil {
-		h.logger.Error("session not found in context")
+		utils.LogError(h.logger, fn, "session not found", nil)
 		http.Error(w, "Session not found", http.StatusUnauthorized)
 		return
 	}
 
-	// Parse form and limit upload size
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		h.logger.Error("failed to parse multipart form", "error", err)
+		utils.LogError(h.logger, fn, "failed to parse multipart form", err)
 		http.Error(w, "Invalid form data", http.StatusBadRequest)
 		return
 	}
@@ -37,7 +37,8 @@ func (h *Handler) SubmitComment(w http.ResponseWriter, r *http.Request) {
 	rawPath := strings.TrimPrefix(r.URL.Path, "/posts/")
 	postID := strings.TrimSuffix(rawPath, "/comments")
 	if postID == "" {
-		http.Error(w, "missing post ID", http.StatusBadRequest)
+		utils.LogError(h.logger, fn, "missing post ID in URL", nil)
+		http.Error(w, "Missing post ID", http.StatusBadRequest)
 		return
 	}
 
@@ -49,7 +50,7 @@ func (h *Handler) SubmitComment(w http.ResponseWriter, r *http.Request) {
 	// Optional: update username
 	if newName != "" {
 		if err := h.sessionService.OverrideUserName(r.Context(), session.SessionID, newName); err != nil {
-			h.logger.Error("failed to override username", "error", err)
+			utils.LogError(h.logger, fn, "failed to override username", err)
 		}
 	}
 
@@ -59,14 +60,14 @@ func (h *Handler) SubmitComment(w http.ResponseWriter, r *http.Request) {
 	for _, fh := range files {
 		file, err := fh.Open()
 		if err != nil {
-			h.logger.Warn("skipped broken uploaded file", slog.Any("error", err))
+			utils.LogWarn(h.logger, fn, "skipped broken uploaded file", "file", fh.Filename, "error", err.Error())
 			continue
 		}
 		defer file.Close()
 		imageData[fh.Filename] = file
 	}
 
-	// Construct comment
+	// Construct comment model
 	comment := &model.Comment{
 		SessionID:       session.SessionID,
 		PostID:          utils.UUID(postID),
@@ -77,12 +78,11 @@ func (h *Handler) SubmitComment(w http.ResponseWriter, r *http.Request) {
 
 	// Submit comment via service
 	if err := h.commentService.CreateComment(r.Context(), comment, imageData); err != nil {
-		h.logger.Error("failed to create comment", "post_id", postID, "error", err)
+		utils.LogError(h.logger, fn, "failed to create comment", err)
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 		return
 	}
 
-	// Redirect back to post
-	h.logger.Info("comment created successfully", "post_id", postID, "session_id", session.SessionID)
+	utils.LogInfo(h.logger, fn, "comment created successfully", "post_id", postID, "session_id", string(session.SessionID))
 	http.Redirect(w, r, "/posts/"+postID, http.StatusSeeOther)
 }

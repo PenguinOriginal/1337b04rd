@@ -18,8 +18,6 @@ import (
 )
 
 func main() {
-
-	// Define flags
 	port := flag.String("port", "", "Port number")
 	help := flag.Bool("help", false, "Show this screen.")
 
@@ -34,7 +32,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Call logger here and input in every layer later
+	// Confid and logger
 	cfg := config.LoadConfig()
 	MyLogger := logger.GetLoggerObject(cfg.LogFilePath)
 
@@ -58,7 +56,6 @@ func main() {
 	// Middleware
 	sessionMiddleware := middleware.SessionMiddleware(sessionService)
 
-	// ServerMux + Routing
 	// Match requests to corresponding handlers
 	mux := http.NewServeMux()
 
@@ -66,7 +63,6 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Routes
 	// Converts h.Catalog(w, r) --> http.Handler
 	mux.Handle("/", sessionMiddleware(http.HandlerFunc(h.Catalog)))              // GET /
 	mux.Handle("/archive", sessionMiddleware(http.HandlerFunc(h.Archive)))       // GET /archive
