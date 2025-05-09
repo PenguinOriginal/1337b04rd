@@ -88,7 +88,7 @@ func (h *Handler) Archive(w http.ResponseWriter, r *http.Request) {
 		Session: &middleware.SessionData{AvatarURL: session.AvatarURL},
 		Posts:   posts,
 	}
-	[Cat
+
 	if err := tpl.Execute(w, data); err != nil {
 		utils.LogError(h.logger, "Archive", "failed to render template", err)
 		http.Error(w, "render error", http.StatusInternalServerError)
