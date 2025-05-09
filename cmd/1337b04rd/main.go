@@ -76,9 +76,9 @@ func main() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	}))
-	mux.Handle("/create", http.HandlerFunc(h.CreatePostForm)) // GET /create
-	mux.Handle("/submit-post", http.HandlerFunc(h.SubmitPost))     // POST /posts
-	mux.Handle("/error", http.HandlerFunc(h.ErrorPage))                          // GET /error
+	mux.Handle("/create", http.HandlerFunc(h.CreatePostForm))  // GET /create
+	mux.Handle("/submit-post", http.HandlerFunc(h.SubmitPost)) // POST /posts
+	mux.Handle("/error", http.HandlerFunc(h.ErrorPage))        // GET /error
 
 	// If flag is not from CLI, then use environment
 	finalPort := *port
@@ -90,18 +90,16 @@ func main() {
 	}
 
 	// Apply middlewares: CORS → Session → mux
-handler := middleware.CORSMiddleware()(mux)
-handler = sessionMiddleware(handler)
+	handler := middleware.CORSMiddleware()(mux)
+	handler = sessionMiddleware(handler)
 
-server := &http.Server{
-	Addr:         ":" + finalPort,
-	Handler:      handler,
-	ReadTimeout:  10 * time.Second,
-	WriteTimeout: 10 * time.Second,
-	IdleTimeout:  60 * time.Second,
-}
-
-	
+	server := &http.Server{
+		Addr:         ":" + finalPort,
+		Handler:      handler,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
 
 	// Timers for archivation logic and cleaning expired sessions
 	go func() {
