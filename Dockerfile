@@ -10,6 +10,11 @@ RUN go mod download
 
 # Copy the full source code into container
 COPY . .
+
+# Copy static files explicitly (important for template files)
+COPY static/ /app/static/
+
+# Build the go app
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o 1337b04rd ./cmd/1337b04rd
 
 # Compile the app
@@ -22,6 +27,9 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /app/1337b04rd .
+
+# Copy static files to the final container
+COPY --from=builder /app/static /app/static
 
 # Document the intended internal port
 EXPOSE 8080

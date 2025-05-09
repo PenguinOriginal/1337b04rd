@@ -36,16 +36,17 @@ services:
     volumes:
       - ./data:/data
       - ./logging:/logging
+      - ./static:/static
     depends_on:
       db:
         condition: service_healthy
     restart: always
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/"]  
-      interval: 5s
-      timeout: 5s
-      retries: 3 
-      start_period: 30s
+    # healthcheck:
+    #   test: ["CMD", "curl", "--fail", "http://localhost:8080/"]  
+    #   interval: 5s
+    #   timeout: 5s
+    #   retries: 3 
+    #   start_period: 30s
 
 volumes:
   pgdata:
