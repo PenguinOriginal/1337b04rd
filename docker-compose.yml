@@ -14,7 +14,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U leetuser"]
+      test: ["CMD-SHELL", "pg_isready -U leetuser -d leetboard"]
       interval: 5s
       timeout: 5s
       retries: 3 
@@ -44,11 +44,12 @@ services:
       db:
         condition: service_healthy
     restart: always
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/"]  
-      interval: 5s
-      timeout: 5s
-      retries: 3 
+    # healthcheck:
+    #   test: ["CMD", "curl", "--fail", "http://localhost:8080/"]  
+    #   interval: 5s
+    #   timeout: 5s
+    #   retries: 3 
+    #   start_period: 30s
 
 volumes:
   pgdata:

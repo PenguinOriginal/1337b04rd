@@ -72,7 +72,7 @@ func main() {
 		} else if r.Method == http.MethodPost {
 			h.SubmitComment(w, r)
 		} else {
-			utils.LogWarn(h.Logger, "MuxRouter", "invalid method for /posts/", "method", r.Method)
+			utils.LogWarn(MyLogger, "MuxRouter", "invalid method for /posts/", "method", r.Method)
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})))
