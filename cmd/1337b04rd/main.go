@@ -64,12 +64,20 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Converts h.Catalog(w, r) --> http.Handler
-	mux.Handle("/", sessionMiddleware(http.HandlerFunc(h.Catalog)))              // GET /
-	mux.Handle("/archive", sessionMiddleware(http.HandlerFunc(h.Archive)))       // GET /archive
-	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(h.Post)))           // GET /posts/{id}
+	mux.Handle("/", sessionMiddleware(http.HandlerFunc(h.Catalog)))        // GET /
+	mux.Handle("/archive", sessionMiddleware(http.HandlerFunc(h.Archive))) // GET /archive
+	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			h.Post(w, r)
+		} else if r.Method == http.MethodPost {
+			h.SubmitComment(w, r)
+		} else {
+			utils.LogWarn(h.Logger, "MuxRouter", "invalid method for /posts/", "method", r.Method)
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})))
 	mux.Handle("/create", sessionMiddleware(http.HandlerFunc(h.CreatePostForm))) // GET /create
 	mux.Handle("/posts", sessionMiddleware(http.HandlerFunc(h.SubmitPost)))      // POST /posts
-	mux.Handle("/posts/", sessionMiddleware(http.HandlerFunc(h.SubmitComment)))  // POST /posts/{id}/comments
 	mux.Handle("/error", http.HandlerFunc(h.ErrorPage))                          // GET /error
 
 	// If flag is not from CLI, then use environment

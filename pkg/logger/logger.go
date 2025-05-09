@@ -5,33 +5,33 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
 )
 
 var MyLogger *slog.Logger
 
-// This function creates a new instance of structured logger
-func GetLoggerObject(FilePath string) *slog.Logger {
-
-	option := os.O_CREATE | os.O_TRUNC | os.O_RDWR | os.O_APPEND
-
-	file, err := os.OpenFile(FilePath, option, 0666)
-	if err != nil {
-		log.Fatalln("Error opening log file: ", err)
+// GetLoggerObject creates and returns a structured logger that writes to the given file path.
+func GetLoggerObject(filePath string) *slog.Logger {
+	// Ensure parent directory exists
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Fatalf("Failed to create log directory: %v", err)
 	}
 
-	// Creation of a new instance of logger. "File" variable is a destination file
+	// File flags: create if not exists, append, read/write
+	option := os.O_CREATE | os.O_RDWR | os.O_APPEND
+	file, err := os.OpenFile(filePath, option, 0666)
+	if err != nil {
+		log.Fatalf("Error opening log file: %v", err)
+	}
+
+	// Create the structured logger
 	logger := slog.New(slog.NewJSONHandler(file, &slog.HandlerOptions{
 		AddSource: true,
 		Level:     slog.LevelDebug,
 	}))
 
-	// NewJSONHandler makes sure the logger gives output in JSON format
-	// &slog.HandlerOptions is a pointer to a struct that allows customization of logger
-	// AddSource: adds the source file and line number where the log message was called
-	// Level: sets the minimum logging level to "Debug", ensuring all messages at this level and higher are logged
-
 	return logger
-
 }
 
 func ErrorWrapper(layer, functionName, context string, err error) error {

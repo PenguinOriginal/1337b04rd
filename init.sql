@@ -1,4 +1,3 @@
--- Return to this code later
 CREATE TABLE sessions (
   session_id UUID PRIMARY KEY, -- cookie/session ID
   avatar_url TEXT NOT NULL,
