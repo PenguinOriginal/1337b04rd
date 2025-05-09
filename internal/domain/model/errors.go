@@ -2,15 +2,11 @@ package model
 
 import "errors"
 
-// We may not need all errors
-
 // Common reusable errors
 var (
 	ErrNotFound     = errors.New("resource not found")
 	ErrInvalidInput = errors.New("invalid input provided")
 	ErrInternal     = errors.New("internal server error")
-	ErrUnauthorized = errors.New("unauthorized access")
-	ErrForbidden    = errors.New("forbidden operation")
 )
 
 // Post-specific errors
@@ -24,7 +20,6 @@ var (
 var (
 	ErrCommentEmpty    = errors.New("comment cannot be empty")
 	ErrCommentNotFound = errors.New("comment not found")
-	ErrTooManyComments = errors.New("too many comments for this post")
 )
 
 // Session-related errors
